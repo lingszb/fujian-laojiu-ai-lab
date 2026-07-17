@@ -1,0 +1,459 @@
+const DIMENSIONS = [
+  "energy",
+  "social",
+  "reflection",
+  "adventure",
+  "comfort",
+  "celebration",
+  "romance",
+  "playful",
+  "ai",
+  "action",
+];
+
+const ANSWER_WEIGHTS = {
+  "state-new": { energy: 14, adventure: 15, playful: 6 },
+  "state-offline": { energy: -14, reflection: 8, comfort: 7 },
+  "state-hustle": { energy: 18, action: 18, adventure: 12 },
+  "state-survive": { energy: -20, comfort: 20, action: -10 },
+  "state-unknown": { reflection: 15, playful: 5, comfort: 5 },
+  "taste-sour": { adventure: 8, energy: 5 },
+  "taste-sweet": { comfort: 10, playful: 10 },
+  "taste-bubbles": { energy: 12, social: 8, celebration: 8 },
+  "taste-quiet": { reflection: 12, comfort: 12, social: -5 },
+  "taste-bold": { energy: 16, adventure: 12 },
+  "delete-monday": { comfort: 8, playful: 5 },
+  "delete-group": { social: -12, comfort: 8 },
+  "delete-boss": { adventure: 8, playful: 10 },
+  "delete-todos": { comfort: 10, action: -5 },
+  "delete-rumination": { reflection: 12, comfort: 10 },
+  "delete-anxiety": { comfort: 15, energy: -5 },
+  "delete-bug": { reflection: 8, action: 10, ai: 4 },
+  "delete-alarm": { comfort: 15, energy: -8 },
+  "delete-ddl": { action: 12, playful: 8, energy: 5 },
+  vacation: { comfort: 15 },
+  wealth: { adventure: 10, playful: 15 },
+  launch: { energy: 10, celebration: 12, action: 8 },
+  love: { romance: 20, social: 8 },
+  "ai-work": { ai: 20, comfort: 8 },
+  "task-start": { action: 22, energy: 8 },
+  "task-research": { reflection: 20 },
+  "task-delay": { comfort: 12, action: -12, playful: 10 },
+  "task-ai": { ai: 24, comfort: 10, playful: 8 },
+};
+
+const TASTE_PROFILES = {
+  "taste-sour": { taste: "refreshing", sweetness: "less" },
+  "taste-sweet": { taste: "fruit", sweetness: "sweet" },
+  "taste-bubbles": { taste: "sparkling", sweetness: "balanced" },
+  "taste-quiet": { taste: "tea", sweetness: "less" },
+  "taste-bold": { taste: "fruit", sweetness: "balanced" },
+};
+
+const TASTE_TONE_INDEX = {
+  "taste-sour": 0,
+  "taste-sweet": 1,
+  "taste-bubbles": 2,
+  "taste-quiet": 3,
+  "taste-bold": 4,
+};
+
+const STATE_TONE_NAMES = {
+  "state-new": [
+    "新坑已开，旧事免谈",
+    "今天适合无中生有",
+    "灵感已到账，理智稍后",
+    "世界重新加载成功",
+    "今日宜凭空开花",
+  ],
+  "state-offline": [
+    "脑子在线，本人先下线",
+    "别催，酒还没醒",
+    "系统繁忙，杯子空闲",
+    "今日 Token 已用完",
+    "请稍后，本人正在回甘",
+  ],
+  "state-hustle": [
+    "今天不改命，只改 Bug",
+    "先干了这杯，再干这一票",
+    "灵感满格，理智欠费",
+    "进度条满了，杯子空了",
+    "OKR 喝掉一半",
+  ],
+  "state-survive": [
+    "为我的懒惰自罚一杯",
+    "今天先续命",
+    "活着本身就是交付",
+    "今天不卷，杯子会圆",
+    "低电量也值得碰杯",
+  ],
+  "state-unknown": [
+    "人格加载失败，酒方生成成功",
+    "我是谁不重要，谁买单比较重要",
+    "身份待定，杯子已确认",
+    "今日没有结论，只有回甘",
+    "自我认知正在发酵",
+  ],
+};
+
+const DELETE_JOKE_NAMES = {
+  "delete-monday": "周一已删除，周五请上线",
+  "delete-group": "工作群已静音，杯子已开机",
+  "delete-boss": "老板不在服务区",
+  "delete-todos": "待办清空失败，酒杯清空成功",
+  "delete-rumination": "内耗已卸载，快乐试运行",
+  "delete-anxiety": "焦虑已提交，等待撤回",
+  "delete-bug": "Bug 暂未修复，情绪已热修",
+  "delete-alarm": "闹钟没有权限访问今天",
+  "delete-ddl": "DDL 在追，我先回甘",
+};
+
+const WISH_TASK_NAMES = {
+  vacation: {
+    "task-start": "请假未批，人已出发",
+    "task-research": "放假方案正在评审",
+    "task-delay": "假期不急，明天就来",
+    "task-ai": "请假条已交给 AI",
+  },
+  wealth: {
+    "task-start": "融资未果，先醉成果",
+    "task-research": "现金流不够，酒先流",
+    "task-delay": "一个亿在路上，我先坐下",
+    "task-ai": "让 AI 跑模型，我等到账",
+  },
+  launch: {
+    "task-start": "产品没爆，酒先开了",
+    "task-research": "服务器没扛住，杯子扛住了",
+    "task-delay": "上线再说，今晚先下线",
+    "task-ai": "模型正在扩容，我先续杯",
+  },
+  love: {
+    "task-start": "双向奔赴，单向干杯",
+    "task-research": "心动尚未通过评审",
+    "task-delay": "爱情明天来，今晚先回甘",
+    "task-ai": "匹配失败，请重试一杯",
+  },
+  "ai-work": {
+    "task-start": "上下文太长，先喝一杯",
+    "task-research": "Token 不够，酒精度来凑",
+    "task-delay": "模型还在想，我先续杯",
+    "task-ai": "这杯不用 Prompt",
+  },
+};
+
+const RECIPES = [
+  {
+    id: "R01",
+    name: "葡萄多多饮",
+    note: "葡萄、乳酸与柔和酒香",
+    personalities: { comfort: 1, social: 0.25, playful: 0.35 },
+    tastes: { fruit: 1, lactic: 1, sweet: 0.8, refreshing: 0.35 },
+    blockedBy: ["dairy"],
+    allergens: ["可能含乳制品"],
+    ingredients: [
+      ["福建老酒", "40 ml"],
+      ["葡萄汁", "90 ml"],
+      ["养乐多", "1 瓶"],
+      ["冰块", "满杯"],
+    ],
+    glass: { color: "#c589b5", sparkling: false },
+    names: ["为我的懒惰自罚一杯", "脑子加载中，杯子先开机", "允许自己慢半拍"],
+  },
+  {
+    id: "R02",
+    name: "绝对落日",
+    note: "橙香、葡萄气泡与落日感",
+    personalities: { romance: 1, celebration: 0.85, social: 0.45 },
+    tastes: { fruit: 1, sparkling: 0.78, sweet: 0.55, refreshing: 0.72 },
+    blockedBy: ["sparkling", "citrus"],
+    allergens: [],
+    ingredients: [
+      ["福建老酒", "现场标准"],
+      ["橙汁", "现场标准"],
+      ["葡萄汽水", "现场标准"],
+    ],
+    glass: { color: "#f29a75", sparkling: true },
+    names: ["愿望很远，晚霞很近", "落日懂我，晚风也懂", "今晚允许故事有续集"],
+  },
+  {
+    id: "R03",
+    name: "冰茶黄酒",
+    note: "茶香、柠檬与清爽回味",
+    personalities: { reflection: 1, adventure: 0.25, comfort: 0.2 },
+    tastes: { tea: 1, refreshing: 0.92, sweet: 0.18 },
+    blockedBy: ["citrus"],
+    allergens: [],
+    ingredients: [
+      ["福建老酒", "现场标准"],
+      ["东方树叶红茶", "现场标准"],
+      ["柠檬汁", "现场标准"],
+    ],
+    glass: { color: "#d5a65f", sparkling: false },
+    names: ["别催，灵感正在回温", "答案晚一点也算答案", "把没说完的留给回味"],
+  },
+  {
+    id: "R04",
+    name: "葡萄气泡黄酒",
+    note: "果香、气泡与明亮节奏",
+    personalities: { social: 1, energy: 0.85, action: 0.65, celebration: 0.5 },
+    tastes: { fruit: 0.8, sparkling: 1, sweet: 0.62, refreshing: 0.8 },
+    blockedBy: ["sparkling"],
+    allergens: [],
+    ingredients: [
+      ["葡萄汁", "10 ml"],
+      ["芬达", "18 ml"],
+      ["雪碧", "35 ml"],
+      ["福建老酒", "10 ml"],
+    ],
+    glass: { color: "#d995bc", sparkling: true },
+    names: ["产品会爆，杯子别空", "快乐正在请求加入群聊", "这一杯替我打开话题"],
+  },
+  {
+    id: "R05",
+    name: "橙香乳酸黄酒",
+    note: "橙香、乳酸与轻盈酸甜",
+    personalities: { comfort: 1, playful: 0.7, ai: 0.35 },
+    tastes: { fruit: 0.65, lactic: 1, sweet: 0.62, refreshing: 0.42 },
+    blockedBy: ["dairy", "citrus"],
+    allergens: ["可能含乳制品"],
+    ingredients: [
+      ["养乐多", "18 ml"],
+      ["橙汁", "18 ml"],
+      ["福建老酒", "10 ml"],
+    ],
+    glass: { color: "#f2bd83", sparkling: false },
+    names: ["算力归你，松弛归我", "今天先不卷，酒会替我圆", "暂停营业，快乐续杯"],
+  },
+];
+
+function hash(value) {
+  let number = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    number ^= value.charCodeAt(index);
+    number = Math.imul(number, 16777619);
+  }
+  return number >>> 0;
+}
+
+export function normalizeCreatorName(value) {
+  const cleaned = String(value ?? "")
+    .replace(/[\u0000-\u001f\u007f<>]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return Array.from(cleaned).slice(0, 12).join("") || "今日酿造者";
+}
+
+function clamp(value) {
+  return Math.max(32, Math.min(99, Math.round(value)));
+}
+
+function buildDimensions(answers) {
+  const values = Object.fromEntries(DIMENSIONS.map((key) => [key, 50]));
+  for (const answer of answers) {
+    const weights = ANSWER_WEIGHTS[answer] ?? {};
+    for (const [key, value] of Object.entries(weights)) values[key] += value;
+  }
+  for (const key of DIMENSIONS) values[key] = clamp(values[key]);
+  return values;
+}
+
+function preferencesFromAnswers(answers, preferences) {
+  const profile = TASTE_PROFILES[answers[1]];
+  if (!profile) return preferences;
+  return {
+    ...preferences,
+    tastes: [profile.taste],
+    sweetness: profile.sweetness,
+  };
+}
+
+function buildDrinkNames(answers) {
+  const stateNames = STATE_TONE_NAMES[answers[0]] ?? STATE_TONE_NAMES["state-unknown"];
+  const toneIndex = TASTE_TONE_INDEX[answers[1]] ?? TASTE_TONE_INDEX["taste-quiet"];
+  const deleted = DELETE_JOKE_NAMES[answers[2]] ?? DELETE_JOKE_NAMES["delete-rumination"];
+  const wishNames = WISH_TASK_NAMES[answers[3]] ?? WISH_TASK_NAMES.vacation;
+  const wishTask = wishNames[answers[4]] ?? wishNames["task-delay"];
+  return [stateNames[toneIndex], deleted, wishTask];
+}
+
+function scoreRecipe(recipe, dimensions, preferences) {
+  let score = 0;
+  for (const [key, weight] of Object.entries(recipe.personalities)) {
+    score += dimensions[key] * weight;
+  }
+  for (const taste of preferences.tastes) {
+    score += (recipe.tastes[taste] ?? 0) * 75;
+  }
+  if (preferences.sweetness === "less") score += (1 - recipe.tastes.sweet) * 25;
+  if (preferences.sweetness === "sweet") score += recipe.tastes.sweet * 25;
+  return score;
+}
+
+function personalityTitle(dimensions) {
+  if (dimensions.social >= 75 && dimensions.celebration >= 65) return "气氛稳定输出者";
+  if (dimensions.reflection >= 75 && dimensions.adventure >= 50) return "安静但敢想的探索者";
+  if (dimensions.ai >= 70 && dimensions.comfort >= 60) return "把工作交给 AI 的松弛派";
+  if (dimensions.romance >= 65) return "给今天留镜头的人";
+  if (dimensions.comfort >= 70) return "温柔摆烂型行动派";
+  return "认真生活的即兴派";
+}
+
+function metricSet(dimensions) {
+  const spirit = clamp(50 + (dimensions.energy - 50) * 0.55 - (dimensions.comfort - 50) * 0.2);
+  const social = clamp(50 + (dimensions.social - 50) * 0.65);
+  const groupThree = [
+    ["冒险指数", clamp(50 + (dimensions.adventure - 50) * 0.6 + (dimensions.action - 50) * 0.15)],
+    ["灵感发酵度", clamp(50 + (dimensions.reflection - 50) * 0.72)],
+    ["摆烂合法度", clamp(50 + (dimensions.comfort - 50) * 0.65 - (dimensions.action - 50) * 0.18)],
+  ].sort((a, b) => Math.abs(b[1] - 50) - Math.abs(a[1] - 50));
+  const groupFour = [
+    ["续命需求", clamp(50 + (dimensions.comfort - 50) * 0.55 - (dimensions.energy - 50) * 0.35)],
+    ["AI 依赖度", clamp(50 + (dimensions.ai - 50) * 0.75)],
+    ["庆祝必要度", clamp(50 + (dimensions.celebration - 50) * 0.72)],
+  ].sort((a, b) => Math.abs(b[1] - 50) - Math.abs(a[1] - 50));
+  return [
+    { label: "精神浓度", value: spirit },
+    { label: "社交指数", value: social },
+    { label: groupThree[0][0], value: groupThree[0][1] },
+    { label: groupFour[0][0], value: groupFour[0][1] },
+  ];
+}
+
+const RECEIPT_TYPES = {
+  "机器人": { rarity: "6.0%", glyph: " [o_o]\n/|___|\\\n  |_|" },
+  "猫头鹰": { rarity: "2.8%", glyph: " ,___,\n (o o)\n /|_|\\\n  / \\" },
+  "鸭": { rarity: "12.0%", glyph: "  __\n<(o )\n (  >\n  ^^" },
+  "白猫": { rarity: "8.0%", glyph: " /\\_/\\\n( o.o )\n > ^ <" },
+  "狐狸": { rarity: "6.5%", glyph: " /\\_/\\\n( o_o )\n /   \\\n  \\_/" },
+  "云团": { rarity: "14.0%", glyph: " .--.\n( .. )\n '--'\n  .." },
+};
+
+function receiptType(dimensions) {
+  if (dimensions.ai >= 70) return "机器人";
+  if (dimensions.reflection >= 75) return "猫头鹰";
+  if (dimensions.social >= 75) return "鸭";
+  if (dimensions.romance >= 65) return "白猫";
+  if (dimensions.adventure >= 70) return "狐狸";
+  return "云团";
+}
+
+function receiptTotal(dimensions) {
+  if (dimensions.social >= 75 && dimensions.celebration >= 65) return "边开局边发光";
+  if (dimensions.reflection >= 75 && dimensions.adventure >= 50) return "安静里开新路";
+  if (dimensions.ai >= 70 && dimensions.comfort >= 60) return "让算力替我松弛";
+  if (dimensions.romance >= 65) return "把愿望留给晚风";
+  if (dimensions.comfort >= 70) return "柔软但会开工";
+  return "认真即兴生活";
+}
+
+function receiptVerdict(dimensions) {
+  const fastDecision = dimensions.action >= dimensions.reflection;
+  const softLanding = dimensions.comfort >= 60;
+  if (fastDecision && softLanding) return "FAST START. SOFT LAND.";
+  if (fastDecision) return "FAST START. BRIGHT SPARK.";
+  if (softLanding) return "QUIET PLAN. SOFT EXIT.";
+  return "QUIET PLAN. LIVE WIRES.";
+}
+
+function buildReceiptProfile(dimensions, stableHash) {
+  const type = receiptType(dimensions);
+  const prototype = RECEIPT_TYPES[type];
+  const barcode = Array.from({ length: 16 }, (_, index) => ((stableHash >>> (index % 24)) & 1 ? "||" : "|")).join(" ");
+  return {
+    mbti: "N/A",
+    total: receiptTotal(dimensions),
+    type,
+    rarity: prototype.rarity,
+    typeGlyph: prototype.glyph,
+    verdict: receiptVerdict(dimensions),
+    barcode,
+  };
+}
+
+function reasonFor(recipe, preferences) {
+  const tasteText = preferences.tastes.includes("tea")
+    ? "茶香"
+    : preferences.tastes.includes("sparkling")
+      ? "气泡与果香"
+      : preferences.tastes.includes("lactic")
+        ? "乳酸与柔和果香"
+        : preferences.tastes.includes("refreshing")
+          ? "清爽回味"
+          : "果香";
+  const reasons = {
+    R01: `你今天更需要放慢节奏，${tasteText}会把黄酒的温度放得更柔和。`,
+    R02: `你给今天留了一个值得拍下来的画面，${tasteText}正好接住这份明亮。`,
+    R03: `你习惯先想清楚，也愿意给灵感一点时间。${tasteText}更贴近今天的安静节奏。`,
+    R04: `你选择了主动开局，也偏爱${tasteText}。今天适合让杯子先把话题打开。`,
+    R05: `你今天不必用力进入状态，${tasteText}会让这一杯轻松出现。`,
+  };
+  return reasons[recipe.id];
+}
+
+function noteFor(recipe) {
+  return {
+    R01: "今天不用和昨天比较，先让快乐回一点血。",
+    R02: "愿望可以很远，今晚的画面先到。",
+    R03: "答案不一定立刻出现，回味也算进度。",
+    R04: "先庆祝愿意开始，结果可以晚一点到。",
+    R05: "不用一直在线，偶尔加载也很正常。",
+  }[recipe.id];
+}
+
+function adjustmentFor(recipe, preferences) {
+  if (recipe.id === "R01") return preferences.sweetness === "sweet" ? "GRAPE_PLUS" : "STANDARD";
+  if (recipe.id === "R02") return "BRIGHT";
+  if (recipe.id === "R03") return "TEA";
+  if (recipe.id === "R04") return preferences.tastes.includes("sparkling") ? "SPARKLING" : "STANDARD";
+  return "SOFT";
+}
+
+export function computeResult({ answers, preferences, seed }) {
+  const dimensions = buildDimensions(answers);
+  const effectivePreferences = preferencesFromAnswers(answers, preferences);
+  const drinkNames = buildDrinkNames(answers);
+  const available = RECIPES.filter(
+    (recipe) => !recipe.blockedBy.some((restriction) => effectivePreferences.restrictions.includes(restriction)),
+  );
+  const stableHash = hash(`${seed}:${answers.join("|")}:${JSON.stringify(preferences)}`);
+  const receiptNumber = `FJL-2026-${String(100 + (stableHash % 900)).padStart(3, "0")}`;
+  const base = {
+    personalityTitle: personalityTitle(dimensions),
+    metrics: metricSet(dimensions),
+    receiptNumber,
+    dimensions,
+    receiptProfile: buildReceiptProfile(dimensions, stableHash),
+    drinkNames,
+  };
+
+  if (available.length === 0) {
+    return {
+      ...base,
+      recipe: null,
+      adjustmentCode: null,
+      drinkName: "今天的限制，值得被认真对待",
+      drinkNames: ["今天的限制，值得被认真对待"],
+      reason: "你的饮食限制很重要，今天不勉强匹配。可以向现场工作人员咨询。",
+      agentNote: "不合适的就不勉强，这也是一种懂自己。",
+    };
+  }
+
+  const recipe = available
+    .map((item, priority) => ({ item, priority, score: scoreRecipe(item, dimensions, effectivePreferences) }))
+    .sort((a, b) => b.score - a.score || a.priority - b.priority)[0].item;
+  const drinkName = drinkNames[stableHash % drinkNames.length];
+  return {
+    ...base,
+    recipe,
+    adjustmentCode: adjustmentFor(recipe, effectivePreferences),
+    drinkName,
+    reason: reasonFor(recipe, effectivePreferences),
+    agentNote: noteFor(recipe),
+  };
+}
+
+export function alternateDrinkName(result, offset) {
+  const names = result.drinkNames?.length ? result.drinkNames : [result.drinkName];
+  const current = Math.max(0, names.indexOf(result.drinkName));
+  return names[(current + offset) % names.length];
+}
