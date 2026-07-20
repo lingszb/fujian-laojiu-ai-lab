@@ -441,7 +441,7 @@ export default function LabApp() {
           <blockquote>“{result.agentNote}”<cite>— 福小酿</cite></blockquote>
           <div className="result-actions">
             <button className="primary-button" onClick={() => setScreen("receipt")}>查看我的 AI 酒方 <span>→</span></button>
-            <button className="text-button" disabled={nameOffset >= 2} onClick={() => setNameOffset((value) => value + 1)}>换一句酒名 <span>{nameOffset}/2</span></button>
+            <button className="text-button" onClick={() => setNameOffset((value) => (value + 1) % 3)}>换一句酒名 <span>{(nameOffset % 3) + 1}/3</span></button>
           </div>
         </section>
       )}
