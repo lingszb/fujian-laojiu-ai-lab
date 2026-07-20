@@ -20,9 +20,9 @@ test("server-renders the finished Fujian Laojiu experience", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<title>超级合子 × 福建老酒 AI 调酒实验室<\/title>/i);
+  assert.match(html, /<title>WOPC × 福建老酒 AI 调酒实验室<\/title>/i);
   assert.match(html, /正在连接今日风味/);
-  assert.match(html, /超级合子 × 福建老酒/);
+  assert.match(html, /WOPC × 福建老酒/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/i);
 });
 
@@ -36,12 +36,13 @@ test("keeps the product flow local, compliant, and free of a flavor catalog", as
     readFile(new URL("../package.json", import.meta.url), "utf8"),
   ]);
 
-  assert.match(app, /我符合饮酒年龄/);
+  assert.match(app, /我已年满十八周岁，符合饮酒年龄，继续体验/);
   assert.match(app, /我只体验人格测试/);
+  assert.doesNotMatch(app, /不喝气泡饮品/);
   assert.match(app, /useState<Screen>\("home"\)/);
   assert.match(app, /home-cta" onClick=\{\(\) => setScreen\("age"\)\}/);
   assert.match(app, /setParticipation\("drink"\); setScreen\("creator"\)/);
-  assert.match(app, /超级合子 × 福建老酒出品/);
+  assert.match(app, /WOPC × 福建老酒出品/);
   assert.ok(app.indexOf("PERSONALITY RESULT FOR TODAY ONLY") < app.indexOf("receipt-producer"));
   assert.match(app, /localStorage/);
   assert.match(app, /给工作人员看/);

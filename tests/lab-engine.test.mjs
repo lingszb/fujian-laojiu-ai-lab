@@ -75,9 +75,9 @@ test("turns all five answers into abstract joke names instead of literal combina
   });
 
   assert.deepEqual(result.drinkNames, [
-    "灵感满格，理智欠费",
-    "Bug 暂未修复，情绪已热修",
-    "产品没爆，酒先开了",
+    "本轮拒绝加班",
+    "Bug 泡酒了",
+    "开局先碰杯",
   ]);
   assert.equal(new Set(result.drinkNames).size, 3);
   assert.doesNotMatch(result.drinkNames.join("|"), /冒点泡|正在冒泡|马上开始|火力全开/);
@@ -156,6 +156,18 @@ test("dietary restrictions are hard filters", () => {
 
   assert.equal(noneAvailable.recipe, null);
   assert.equal(noneAvailable.adjustmentCode, null);
+
+  const remainingUiRestrictions = computeResult({
+    answers: socialAnswers,
+    preferences: {
+      tastes: [],
+      sweetness: "balanced",
+      restrictions: ["dairy", "citrus"],
+    },
+    seed: "remaining-ui-restrictions",
+  });
+
+  assert.equal(remainingUiRestrictions.recipe?.id, "R04");
 });
 
 test("the same answers and seed produce a stable receipt", () => {

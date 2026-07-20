@@ -25,6 +25,33 @@ Store one `glass.color` per recipe and create depth only with translucent white/
 
 ---
 
+## [LRN-20260717-003] correction
+
+**Logged**: 2026-07-17T18:05:00+08:00
+**Priority**: medium
+**Status**: resolved
+**Area**: infra
+
+### Summary
+For Codex in-app browser handoff, verify the exact browser URL; host-side `curl localhost` success does not prove that the in-app browser can load `localhost`.
+
+### Details
+The server returned HTTP 200 to host-side curl, but the in-app browser tab at `http://localhost:3001/` remained blank and generated no server request. Navigating the same tab to `http://127.0.0.1:3001/` loaded the app immediately. The prior completion claim relied on the wrong verification surface.
+
+### Suggested Action
+When handing off a local preview, inspect the actual in-app browser DOM and console. If `localhost` is blank while the server is healthy, retry the equivalent `127.0.0.1` URL and verify the rendered page before reporting success.
+
+### Metadata
+- Source: user_feedback
+- Related Files: package.json, vite.config.ts
+- Tags: in-app-browser, localhost, loopback, verification
+- Pattern-Key: infra.verify_preview_in_target_browser
+- Recurrence-Count: 1
+- First-Seen: 2026-07-17
+- Last-Seen: 2026-07-17
+
+---
+
 ## [LRN-20260717-002] correction
 
 **Logged**: 2026-07-17T15:45:00+08:00

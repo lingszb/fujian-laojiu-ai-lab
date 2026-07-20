@@ -77,7 +77,6 @@ const QUESTIONS: Question[] = [
 
 const RESTRICTIONS = [
   ["dairy", "不喝含乳饮品"],
-  ["sparkling", "不喝气泡饮品"],
   ["citrus", "对柑橘类敏感"],
   ["none", "无以上限制"],
 ];
@@ -235,7 +234,7 @@ export default function LabApp() {
     const copy = `${creatorName} 的酒方《${displayName}》。福小酿把今天的我，酿成了${result.recipe?.name ?? "一种今天的风味"}。`;
     if (!copyOnly && navigator.share) {
       try {
-        await navigator.share({ title: "超级合子 × 福建老酒 AI 调酒实验室", text: copy, url: window.location.href });
+        await navigator.share({ title: "WOPC × 福建老酒 AI 调酒实验室", text: copy, url: window.location.href });
         return;
       } catch {
         return;
@@ -262,7 +261,7 @@ export default function LabApp() {
       });
       const filename = displayName.replace(/[\\/:*?"<>|]/g, "-").slice(0, 40) || "AI酒方";
       const link = document.createElement("a");
-      link.download = `${filename}-超级合子X福建老酒.png`;
+      link.download = `${filename}-WOPCX福建老酒.png`;
       link.href = image;
       link.click();
       flash("酒方图片已下载");
@@ -277,7 +276,7 @@ export default function LabApp() {
     return (
       <main className="lab-shell boot-screen" aria-live="polite">
         <div className="boot-mark"><Seal /></div>
-        <p className="lab-kicker">超级合子 × 福建老酒</p>
+        <p className="lab-kicker">WOPC × 福建老酒</p>
         <div className="flow-line"><span /></div>
         <p className="boot-copy">正在连接今日风味……</p>
       </main>
@@ -297,7 +296,7 @@ export default function LabApp() {
             <h1>开始之前，<br />先确认一件认真事。</h1>
             <p className="lead-copy">本体验包含酒精饮品。请根据活动所在地法律与现场要求选择。</p>
             <div className="stack-actions">
-              <button className="primary-button" onClick={() => { setParticipation("drink"); setScreen("creator"); }}>我符合饮酒年龄，继续体验 <span>→</span></button>
+              <button className="primary-button" onClick={() => { setParticipation("drink"); setScreen("creator"); }}>我已年满十八周岁，符合饮酒年龄，继续体验 <span>→</span></button>
               <button className="secondary-button" onClick={() => { setParticipation("personality"); setScreen("creator"); }}>我只体验人格测试，不领取酒精饮品</button>
             </div>
           </div>
@@ -310,7 +309,7 @@ export default function LabApp() {
           <LabHeader />
           <div className="home-title-block">
             <div className="online-line"><span /> 福小酿在线</div>
-            <p className="brand-name">超级合子 × 福建老酒</p>
+            <p className="brand-name">WOPC × 福建老酒</p>
             <p className="brand-sub">AI 调酒实验室</p>
             <h1>把今天的你，<br /><em>酿</em>成一杯酒。</h1>
           </div>
@@ -524,7 +523,7 @@ export default function LabApp() {
                 <div className="receipt-number"><span>{result.receiptNumber}</span><strong>FJL / 2026</strong></div>
                 <footer>
                   {participation === "drink" ? "含酒精 · 请理性饮酒" : "仅展示娱乐人格结果"}<br />PERSONALITY RESULT FOR TODAY ONLY
-                  <strong className="receipt-producer">超级合子 × 福建老酒出品</strong>
+                  <strong className="receipt-producer">WOPC × 福建老酒出品</strong>
                 </footer>
               </div>
             </article>
