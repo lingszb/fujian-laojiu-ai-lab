@@ -171,6 +171,7 @@ const RECIPES = [
       ["福建老酒", "30%"],
       ["橙汁", "45%"],
       ["葡萄汽水", "25%"],
+      ["冰块", "适量"],
     ],
     glass: { color: "#f29a75", sparkling: true },
     names: ["愿望很远，晚霞很近", "落日懂我，晚风也懂", "今晚允许故事有续集"],
@@ -187,6 +188,7 @@ const RECIPES = [
       ["福建老酒", "30%"],
       ["东方树叶红茶", "55%"],
       ["柠檬汁", "15%"],
+      ["冰块", "适量"],
     ],
     glass: { color: "#d5a65f", sparkling: false },
     names: ["别催，灵感正在回温", "答案晚一点也算答案", "把没说完的留给回味"],
@@ -204,6 +206,7 @@ const RECIPES = [
       ["芬达", "25%"],
       ["雪碧", "47%"],
       ["福建老酒", "14%"],
+      ["冰块", "适量"],
     ],
     glass: { color: "#d995bc", sparkling: true },
     names: ["产品会爆，杯子别空", "快乐正在请求加入群聊", "这一杯替我打开话题"],
@@ -220,6 +223,7 @@ const RECIPES = [
       ["养乐多", "39%"],
       ["橙汁", "39%"],
       ["福建老酒", "22%"],
+      ["冰块", "适量"],
     ],
     glass: { color: "#f2bd83", sparkling: false },
     names: ["算力归你，松弛归我", "今天先不卷，酒会替我圆", "暂停营业，快乐续杯"],
@@ -265,6 +269,29 @@ function preferencesFromAnswers(answers, preferences) {
     tastes: [profile.taste],
     sweetness: profile.sweetness,
   };
+}
+
+function adjustedIngredients(recipe, preferences) {
+  const base = recipe.ingredients.filter(([, amount]) => amount.endsWith("%"));
+  const ice = recipe.ingredients.find(([ingredient]) => ingredient === "冰块") ?? ["冰块", "适量"];
+  const target = {
+    sweet: (ingredient) => /汁|养乐多|汽水|芬达|雪碧/.test(ingredient),
+    refreshing: (ingredient) => /柠檬|橙汁|汁|茶/.test(ingredient),
+    sparkling: (ingredient) => /汽水|芬达|雪碧/.test(ingredient),
+    tea: (ingredient) => /茶/.test(ingredient),
+    fruit: (ingredient) => /汁|养乐多|汽水|芬达|雪碧/.test(ingredient),
+  }[preferences.tastes[0]];
+  const values = base.map(([ingredient, amount]) => ({ ingredient, value: Number.parseInt(amount, 10) }));
+  const targetIndex = target ? values.findIndex(({ ingredient }) => target(ingredient)) : -1;
+  if (targetIndex >= 0 && values.length > 1) {
+    const donorIndex = values.map((item, index) => ({ ...item, index }))
+      .filter(({ index }) => index !== targetIndex)
+      .sort((a, b) => b.value - a.value)[0].index;
+    const shift = Math.min(8, Math.max(0, values[donorIndex].value - 5));
+    values[targetIndex].value += shift;
+    values[donorIndex].value -= shift;
+  }
+  return [...values.map(({ ingredient, value }) => [ingredient, `${value}%`]), ice];
 }
 
 function buildDrinkNames(answers) {
@@ -444,7 +471,7 @@ export function computeResult({ answers, preferences, seed }) {
   const drinkName = drinkNames[stableHash % drinkNames.length];
   return {
     ...base,
-    recipe,
+    recipe: { ...recipe, ingredients: adjustedIngredients(recipe, effectivePreferences) },
     adjustmentCode: adjustmentFor(recipe, effectivePreferences),
     drinkName,
     reason: reasonFor(recipe, effectivePreferences),

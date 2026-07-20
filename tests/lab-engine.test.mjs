@@ -67,6 +67,18 @@ test("all five recipes expose one mixed glass palette with recipe-specific bubbl
   }
 });
 
+test("taste preferences adjust liquid ratios while keeping ice in every recipe", () => {
+  const input = {
+    answers: ["state-new", "taste-sweet", "delete-monday", "vacation", "task-start"],
+    preferences: { restrictions: [], sweetness: "balanced", tastes: [] },
+    seed: "ratio-adjustment",
+  };
+  const result = computeResult(input);
+  const liquids = result.recipe.ingredients.filter(([, amount]) => amount.endsWith("%"));
+  assert.equal(liquids.reduce((sum, [, amount]) => sum + Number.parseInt(amount, 10), 0), 100);
+  assert.deepEqual(result.recipe.ingredients.at(-1), ["冰块", "适量"]);
+});
+
 test("turns all five answers into abstract joke names instead of literal combinations", () => {
   const result = computeResult({
     answers: socialAnswers,
