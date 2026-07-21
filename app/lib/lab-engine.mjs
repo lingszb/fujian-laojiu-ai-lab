@@ -129,12 +129,12 @@ const WISH_TASK_NAMES = {
   },
   love: {
     "task-start": "桃花没有，酒花很多",
-    "task-research": "心动等待醒酒",
-    "task-delay": "恋爱暂缓，开瓶优先",
-    "task-ai": "心动请求排队中",
+    "task-research": "心动暂无返回值",
+    "task-delay": "恋爱进程暂停，酒意继续",
+    "task-ai": "感情不支持批处理",
   },
   "ai-work": {
-    "task-start": "GPT 说可以喝",
+    "task-start": "AI 建议先开瓶",
     "task-research": "上下文过长",
     "task-delay": "请重新生成快乐",
     "task-ai": "Token 余额不足",
