@@ -97,27 +97,27 @@ const STATE_TONE_NAMES = {
 };
 
 const DELETE_JOKE_NAMES = {
-  "delete-monday": "周一暂时断货",
-  "delete-group": "社交电量归零",
+  "delete-monday": "周一暂不营业",
+  "delete-group": "群聊进入勿扰",
   "delete-boss": "老板勿扰特调",
   "delete-todos": "待办暂存酒",
-  "delete-rumination": "内耗请先醒酒",
-  "delete-anxiety": "焦虑下架，酒已上架",
+  "delete-rumination": "脑内会议已散场",
+  "delete-anxiety": "焦虑暂存云端",
   "delete-bug": "Bug 泡酒了",
-  "delete-alarm": "闹钟已静音",
-  "delete-ddl": "DDL 兑冰",
+  "delete-alarm": "闹钟申请驳回",
+  "delete-ddl": "DDL 延期成功",
 };
 
 const WISH_TASK_NAMES = {
   vacation: {
-    "task-start": "假期已开瓶",
-    "task-research": "放假申请秒批",
-    "task-delay": "清醒排到明天",
-    "task-ai": "AI 代办离线",
+    "task-start": "假期尚在排队",
+    "task-research": "休假通道已开启",
+    "task-delay": "清醒稍后处理",
+    "task-ai": "AI 已接管请假",
   },
   wealth: {
-    "task-start": "暴富尚未到账，酒先到账",
-    "task-research": "发财思路，微醺验证",
+    "task-start": "财富正在加载",
+    "task-research": "财运进入草稿",
     "task-delay": "先喝出个亿",
     "task-ai": "AI 建议先发财",
   },
