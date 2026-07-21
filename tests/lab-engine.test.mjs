@@ -35,7 +35,7 @@ test("social, energetic answers with fruit and bubbles select R04", () => {
   assert.equal(result.metrics.length, 4);
 });
 
-test("quiet, reflective answers with tea preference select R03", () => {
+test("quiet, reflective answers with a refreshing preference select R03", () => {
   const result = computeResult({
     answers: reflectiveAnswers,
     preferences: {
@@ -48,7 +48,25 @@ test("quiet, reflective answers with tea preference select R03", () => {
 
   assert.equal(result.recipe?.id, "R03");
   assert.equal(result.adjustmentCode, "TEA");
-  assert.match(result.reason, /茶香|灵感|安静/);
+  assert.match(result.reason, /清爽|灵感|安静/);
+});
+
+test("R03 uses the blue sparkling 5:5:3 一蓑烟雨 formula", () => {
+  const result = computeResult({
+    answers: reflectiveAnswers,
+    preferences: { tastes: [], sweetness: "balanced", restrictions: [] },
+    seed: "yisuo-blue-formula",
+  });
+
+  assert.equal(result.recipe?.id, "R03");
+  assert.deepEqual(result.recipe.ingredients, [
+    ["雪碧", "38%"],
+    ["蓝色芬达", "38%"],
+    ["黄酒", "24%"],
+    ["冰块", "适量"],
+  ]);
+  assert.equal(result.recipe.glass.sparkling, true);
+  assert.match(result.recipe.glass.color, /^#[0-9a-f]{6}$/i);
 });
 
 test("all five recipes expose one mixed glass palette with recipe-specific bubbles", () => {
@@ -74,7 +92,7 @@ test("all five recipes expose one mixed glass palette with recipe-specific bubbl
     assert.ok(recipe.glass);
     assert.deepEqual(Object.keys(recipe.glass).sort(), ["color", "sparkling"]);
     assert.match(recipe.glass.color, /^#[0-9a-f]{6}$/i);
-    assert.equal(recipe.glass.sparkling, ["R02", "R04"].includes(recipe.id));
+    assert.equal(recipe.glass.sparkling, ["R02", "R03", "R04"].includes(recipe.id));
     assert.equal("visualLayers" in recipe, false);
   }
 });
