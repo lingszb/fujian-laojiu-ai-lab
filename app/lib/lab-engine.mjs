@@ -131,7 +131,7 @@ const WISH_TASK_NAMES = {
     "task-start": "桃花没有，酒花很多",
     "task-research": "心动等待醒酒",
     "task-delay": "恋爱暂缓，开瓶优先",
-    "task-ai": "AI 无法代谈恋爱",
+    "task-ai": "心动请求排队中",
   },
   "ai-work": {
     "task-start": "GPT 说可以喝",
