@@ -516,7 +516,7 @@ export default function LabApp() {
 
                 <div className="receipt-section note-section">
                   <span>AI NOTE</span>
-                  <p>{result.agentNote}</p>
+                  <p>{result.dailyStatus}</p>
                 </div>
 
                 <div className="receipt-barcode" aria-hidden="true">{result.receiptProfile.barcode}</div>
