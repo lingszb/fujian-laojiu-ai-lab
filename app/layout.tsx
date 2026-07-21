@@ -15,6 +15,7 @@ export default function RootLayout({
     <html lang="zh-CN">
       <body>
         {children}
+        <script dangerouslySetInnerHTML={{ __html: "window.plausible=window.plausible||function(){(window.plausible.q=window.plausible.q||[]).push(arguments)}" }} />
         <script defer data-domain="wine.lingszb.cn" src="https://plausible.io/js/script.js" />
       </body>
     </html>

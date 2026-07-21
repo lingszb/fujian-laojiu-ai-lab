@@ -3,6 +3,7 @@
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { toPng } from "html-to-image";
 import { alternateDrinkName, computeResult, normalizeCreatorName } from "./lib/lab-engine.mjs";
+import { trackPlausibleOnce } from "./lib/plausible.mjs";
 
 type Participation = "drink" | "nonalcoholic" | "personality";
 type Screen = "age" | "home" | "creator" | "quiz" | "taste" | "brewing" | "result" | "receipt";
@@ -167,6 +168,14 @@ export default function LabApp() {
     return () => brewTimers.current.forEach(window.clearTimeout);
   }, [screen]);
 
+  useEffect(() => {
+    if (!mounted || screen !== "result" || answers.length !== QUESTIONS.length) return;
+    trackPlausibleOnce(window, `${seed}:generate-recipe`, "Generate Recipe", {
+      participation,
+      recipe: result.recipe?.id ?? "none",
+    });
+  }, [mounted, screen, answers.length, seed, participation, result.recipe?.id]);
+
   useEffect(() => () => {
     if (glassWobbleTimer.current !== null) window.clearTimeout(glassWobbleTimer.current);
   }, []);
@@ -177,6 +186,10 @@ export default function LabApp() {
   }
 
   function chooseAnswer(id: string) {
+    trackPlausibleOnce(window, `${seed}:answer:${questionIndex}`, "Answer Question", {
+      question: `Q${questionIndex + 1}`,
+      answer: id,
+    });
     const next = [...answers];
     next[questionIndex] = id;
     setAnswers(next);
@@ -196,6 +209,7 @@ export default function LabApp() {
     setCreatorName(normalized);
     setCreatorInput(normalized === "今日酿造者" ? "" : normalized);
     setQuestionIndex(Math.min(answers.length, QUESTIONS.length - 1));
+    trackPlausibleOnce(window, `${seed}:start-quiz`, "Start Quiz");
     setScreen("quiz");
   }
 

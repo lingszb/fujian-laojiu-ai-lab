@@ -98,3 +98,18 @@ test("keeps the product flow local, compliant, and free of a flavor catalog", as
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
   assert.match(packageJson, /html-to-image/);
 });
+
+test("wires the quiz funnel to deduplicated Plausible events", async () => {
+  const [app, layout] = await Promise.all([
+    readFile(new URL("../app/lab-app.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(layout, /window\.plausible\.q/);
+  assert.match(app, /trackPlausibleOnce/);
+  assert.match(app, /Start Quiz/);
+  assert.match(app, /Answer Question/);
+  assert.match(app, /Generate Recipe/);
+  assert.match(app, /question: `Q\$\{questionIndex \+ 1\}`/);
+  assert.match(app, /answer: id/);
+});
