@@ -84,6 +84,7 @@ const RESTRICTIONS = [
 
 const BREW_STEPS = ["读取今日状态", "提取情绪线索", "建立今日人格画像", "匹配福建老酒", "校验口味与限制", "正在命名这杯酒"];
 const STORAGE_KEY = "fjl-ai-lab-v3";
+const LIKE_STORAGE_KEY = "fjl-liked-fuxiaoniang-v1";
 
 function Seal({ small = false }: { small?: boolean }) {
   return <span className={small ? "seal seal--small" : "seal"} aria-hidden="true">酿</span>;
@@ -115,6 +116,9 @@ export default function LabApp() {
   const [staffMode, setStaffMode] = useState(false);
   const [glassWobbling, setGlassWobbling] = useState(false);
   const [downloadingReceipt, setDownloadingReceipt] = useState(false);
+  const [likeCount, setLikeCount] = useState<number | null>(null);
+  const [liked, setLiked] = useState(false);
+  const [liking, setLiking] = useState(false);
   const [mounted, setMounted] = useState(false);
   const brewTimers = useRef<number[]>([]);
   const glassWobbleTimer = useRef<number | null>(null);
@@ -129,6 +133,7 @@ export default function LabApp() {
   } as CSSProperties;
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- Restore one saved client-only session before leaving the boot screen. */
     let saved: null | Record<string, unknown> = null;
     try {
       saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || "null");
@@ -150,9 +155,11 @@ export default function LabApp() {
     } else {
       setSeed(`${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
     }
+    setLiked(window.localStorage.getItem(LIKE_STORAGE_KEY) === "1");
     setMounted(true);
     const timer = window.setTimeout(() => setBooting(false), 850);
     return () => window.clearTimeout(timer);
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
   useEffect(() => {
@@ -162,7 +169,6 @@ export default function LabApp() {
 
   useEffect(() => {
     if (screen !== "brewing") return;
-    setBrewIndex(0);
     brewTimers.current = BREW_STEPS.map((_, index) => window.setTimeout(() => setBrewIndex(index), index * 720));
     brewTimers.current.push(window.setTimeout(() => setScreen("result"), 4600));
     return () => brewTimers.current.forEach(window.clearTimeout);
@@ -175,6 +181,23 @@ export default function LabApp() {
       recipe: result.recipe?.id ?? "none",
     });
   }, [mounted, screen, answers.length, seed, participation, result.recipe?.id]);
+
+  useEffect(() => {
+    if (!mounted || screen !== "receipt") return;
+    let cancelled = false;
+    fetch("/api/likes", { cache: "no-store" })
+      .then((response) => {
+        if (!response.ok) throw new Error("Like counter unavailable");
+        return response.json();
+      })
+      .then((data) => {
+        if (!cancelled && Number.isInteger(data.count)) setLikeCount(data.count);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [mounted, screen]);
 
   useEffect(() => () => {
     if (glassWobbleTimer.current !== null) window.clearTimeout(glassWobbleTimer.current);
@@ -224,6 +247,11 @@ export default function LabApp() {
     });
   }
 
+  function beginBrewing() {
+    setBrewIndex(0);
+    setScreen("brewing");
+  }
+
   function restart() {
     window.localStorage.removeItem(STORAGE_KEY);
     setScreen("home");
@@ -243,6 +271,28 @@ export default function LabApp() {
       setGlassWobbling(false);
       glassWobbleTimer.current = null;
     }, 900);
+  }
+
+  async function likeFuxiaoniang() {
+    if (liked || liking) return;
+    setLiking(true);
+    try {
+      const response = await fetch("/api/likes", { method: "POST" });
+      if (!response.ok) throw new Error("Like counter unavailable");
+      const data = await response.json();
+      if (!Number.isInteger(data.count)) throw new Error("Invalid like count");
+      window.localStorage.setItem(LIKE_STORAGE_KEY, "1");
+      setLikeCount(data.count);
+      setLiked(true);
+      trackPlausibleOnce(window, `${seed}:like-fuxiaoniang`, "Like Fuxiaoniang", {
+        recipe: result.recipe?.id ?? "none",
+      });
+      flash("福小酿收到你的赞啦");
+    } catch {
+      flash("福小酿暂时没接住这个赞");
+    } finally {
+      setLiking(false);
+    }
   }
 
   async function shareResult(copyOnly = false) {
@@ -411,7 +461,7 @@ export default function LabApp() {
             </div>
           </div>
           <div className="sticky-action">
-            <button className="primary-button" disabled={!preferences.restrictions.length} onClick={() => setScreen("brewing")}>交给福小酿 <span>→</span></button>
+            <button className="primary-button" disabled={!preferences.restrictions.length} onClick={beginBrewing}>交给福小酿 <span>→</span></button>
             <p>所有限制都会被严格保留。</p>
           </div>
         </section>
@@ -545,6 +595,17 @@ export default function LabApp() {
           </div>
           <div className="receipt-actions">
             {participation !== "personality" && result.recipe && <button className="primary-button" onClick={() => setStaffMode((value) => !value)}>{staffMode ? "退出出杯模式" : "给工作人员看"} <span>{staffMode ? "×" : "↗"}</span></button>}
+            <button
+              type="button"
+              className={`like-button${liked ? " is-liked" : ""}`}
+              onClick={likeFuxiaoniang}
+              disabled={liked || liking}
+              aria-pressed={liked}
+            >
+              <span className="like-icon" aria-hidden="true">{liked ? "♥" : "♡"}</span>
+              <span>{liking ? "正在送出这个赞…" : liked ? "已为福小酿点赞" : "为福小酿点赞"}</span>
+              {likeCount !== null && <strong className="like-count">{likeCount}</strong>}
+            </button>
             <div className="share-row"><button disabled={downloadingReceipt} onClick={downloadReceipt}>{downloadingReceipt ? "正在生成图片…" : "下载酒方图片"}</button><button onClick={() => shareResult(false)}>分享这一杯</button><button onClick={() => shareResult(true)}>复制文案</button></div>
             <button className="text-button restart-button" onClick={restart}>再测一次</button>
           </div>

@@ -113,3 +113,21 @@ test("wires the quiz funnel to deduplicated Plausible events", async () => {
   assert.match(app, /question: `Q\$\{questionIndex \+ 1\}`/);
   assert.match(app, /answer: id/);
 });
+
+test("places the global 福小酿 like action before the receipt share row", async () => {
+  const [app, css] = await Promise.all([
+    readFile(new URL("../app/lab-app.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+
+  const staffIndex = app.indexOf("给工作人员看");
+  const likeIndex = app.indexOf("为福小酿点赞");
+  const receiptActionsIndex = app.indexOf('className="share-row"');
+  assert.ok(staffIndex >= 0 && staffIndex < likeIndex && likeIndex < receiptActionsIndex);
+  assert.match(app, /\/api\/likes/);
+  assert.match(app, /Like Fuxiaoniang/);
+  assert.match(app, /aria-pressed=\{liked\}/);
+  assert.match(app, /like-count/);
+  assert.match(css, /\.like-button/);
+  assert.match(css, /\.like-icon/);
+});
