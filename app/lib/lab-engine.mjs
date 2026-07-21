@@ -130,6 +130,38 @@ const WISH_TASK_NAMES = {
   },
 };
 
+function combineAnswerWeights(...answerIds) {
+  const combined = Object.fromEntries(DIMENSIONS.map((key) => [key, 0]));
+  for (const answerId of answerIds) {
+    const weights = ANSWER_WEIGHTS[answerId] ?? {};
+    for (const [key, value] of Object.entries(weights)) combined[key] += value;
+  }
+  return Object.freeze(combined);
+}
+
+const TASTE_IDS_BY_TONE = Object.entries(TASTE_TONE_INDEX)
+  .sort(([, left], [, right]) => left - right)
+  .map(([tasteId]) => tasteId);
+
+const DRINK_NAME_CATALOG = Object.freeze([
+  ...Object.entries(STATE_TONE_NAMES).flatMap(([stateId, names]) =>
+    names.map((name, index) => Object.freeze({
+      name,
+      weights: combineAnswerWeights(stateId, TASTE_IDS_BY_TONE[index]),
+    })),
+  ),
+  ...Object.entries(DELETE_JOKE_NAMES).map(([deleteId, name]) => Object.freeze({
+    name,
+    weights: combineAnswerWeights(deleteId),
+  })),
+  ...Object.entries(WISH_TASK_NAMES).flatMap(([wishId, taskNames]) =>
+    Object.entries(taskNames).map(([taskId, name]) => Object.freeze({
+      name,
+      weights: combineAnswerWeights(wishId, taskId),
+    })),
+  ),
+]);
+
 const RECIPES = [
   {
     id: "R01",
@@ -309,13 +341,34 @@ function adjustedIngredients(recipe, preferences) {
   return [...values.map(({ ingredient, value }) => [ingredient, `${value}%`]), ice];
 }
 
-function buildDrinkNames(answers) {
-  const stateNames = STATE_TONE_NAMES[answers[0]] ?? STATE_TONE_NAMES["state-unknown"];
-  const toneIndex = TASTE_TONE_INDEX[answers[1]] ?? TASTE_TONE_INDEX["taste-quiet"];
-  const deleted = DELETE_JOKE_NAMES[answers[2]];
-  const wishNames = WISH_TASK_NAMES[answers[3]] ?? WISH_TASK_NAMES.vacation;
-  const wishTask = wishNames[answers[4]];
-  return [stateNames[toneIndex], deleted, wishTask].filter(Boolean);
+function scoreDrinkName(entry, dimensions, combinationKey, seed) {
+  let dotProduct = 0;
+  let answerMagnitude = 0;
+  let nameMagnitude = 0;
+  for (const key of DIMENSIONS) {
+    const answerValue = dimensions[key] - 50;
+    const nameValue = entry.weights[key];
+    dotProduct += answerValue * nameValue;
+    answerMagnitude += answerValue ** 2;
+    nameMagnitude += nameValue ** 2;
+  }
+
+  const semanticMatch = dotProduct / Math.sqrt(Math.max(1, answerMagnitude * nameMagnitude));
+  const combinationMatch = hash(`${combinationKey}:${entry.name}`) / 0xffffffff;
+  const stableTieBreaker = hash(`${seed}:${entry.name}`) / 0xffffffff;
+  return semanticMatch * 100 + combinationMatch * 12 + stableTieBreaker * 0.001;
+}
+
+function buildDrinkNames(answers, dimensions, seed) {
+  const combinationKey = answers.join("|");
+  return DRINK_NAME_CATALOG
+    .map((entry) => ({
+      name: entry.name,
+      score: scoreDrinkName(entry, dimensions, combinationKey, seed),
+    }))
+    .sort((left, right) => right.score - left.score || left.name.localeCompare(right.name, "zh-CN"))
+    .slice(0, 3)
+    .map(({ name }) => name);
 }
 
 function scoreRecipe(recipe, dimensions, preferences) {
@@ -464,7 +517,7 @@ function adjustmentFor(recipe, preferences) {
 export function computeResult({ answers, preferences, seed, alcoholFree = false }) {
   const dimensions = buildDimensions(answers);
   const effectivePreferences = preferencesFromAnswers(answers, preferences);
-  const drinkNames = buildDrinkNames(answers);
+  const drinkNames = buildDrinkNames(answers, dimensions, seed);
   const available = RECIPES.filter(
     (recipe) => !recipe.blockedBy.some((restriction) => effectivePreferences.restrictions.includes(restriction)),
   );

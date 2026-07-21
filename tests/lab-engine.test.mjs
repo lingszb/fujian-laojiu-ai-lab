@@ -5,6 +5,18 @@ import { alternateDrinkName, computeResult, normalizeCreatorName } from "../app/
 
 const socialAnswers = ["state-hustle", "taste-bubbles", "delete-bug", "launch", "task-start"];
 const reflectiveAnswers = ["state-offline", "taste-quiet", "delete-rumination", "vacation", "task-research"];
+const existingDrinkNames = new Set([
+  "微醺版本已发布", "AI建议碰一杯", "先喝再开新局", "清醒请稍后", "甜度超标，理智欠费",
+  "低电量高酒量", "思考中，请勿清醒", "清醒请排队", "续杯才能续命", "模型拒绝断片",
+  "推理已暂停，酒先上线", "本人缺席，酒精代班", "加班请求已退回", "先干一杯再上线", "算力已兑换酒力",
+  "为我的懒惰自罚一杯", "快乐即将满格", "理智今日售罄", "先碰杯，后解释", "残局交给这一杯",
+  "请求已进入微醺态", "理智接口超时", "生成失败，请续杯", "本杯无需联网", "人格正在缓冲",
+  "老板勿扰特调", "待办暂存酒", "焦虑暂存云端", "Bug 泡酒了",
+  "先喝出个亿", "AI 建议先发财",
+  "开局先碰杯", "先算一卦再开瓶", "启动失败，请续杯", "Agent 负责开局",
+  "先开瓶，后开工", "脑子在加载，酒在出杯", "明日复明日，先把杯续", "让 AI 干活，我负责干杯",
+  "AI 已替你开局", "上下文过长", "请重新生成快乐", "Token 余额不足",
+]);
 
 test("social, energetic answers with fruit and bubbles select R04", () => {
   const result = computeResult({
@@ -81,24 +93,21 @@ test("taste preferences adjust liquid ratios while keeping ice in every recipe",
   assert.deepEqual(result.recipe.ingredients.at(-1), ["冰块", "适量"]);
 });
 
-test("turns all five answers into abstract joke names instead of literal combinations", () => {
+test("matches existing abstract joke names from the complete answer profile", () => {
   const result = computeResult({
     answers: socialAnswers,
     preferences: { tastes: [], sweetness: "balanced", restrictions: [] },
     seed: "joke-name-case",
   });
 
-  assert.deepEqual(result.drinkNames, [
-    "加班请求已退回",
-    "Bug 泡酒了",
-    "开局先碰杯",
-  ]);
+  assert.equal(result.drinkNames.length, 3);
   assert.equal(new Set(result.drinkNames).size, 3);
+  assert.ok(result.drinkNames.every((name) => existingDrinkNames.has(name)));
   assert.doesNotMatch(result.drinkNames.join("|"), /冒点泡|正在冒泡|马上开始|火力全开/);
   assert.equal(alternateDrinkName(result, 1), result.drinkNames[(result.drinkNames.indexOf(result.drinkName) + 1) % 3]);
 });
 
-test("every final quiz combination keeps its available distinct name options", () => {
+test("all 4500 final quiz combinations return three stable, distinct existing names", () => {
   const groups = [
     ["state-new", "state-offline", "state-hustle", "state-survive", "state-unknown"],
     ["taste-sour", "taste-sweet", "taste-bubbles", "taste-quiet", "taste-bold"],
@@ -107,6 +116,7 @@ test("every final quiz combination keeps its available distinct name options", (
     ["task-start", "task-research", "task-delay", "task-ai"],
   ];
   let checked = 0;
+  const seenNames = new Set();
 
   for (const state of groups[0]) for (const taste of groups[1]) for (const deleted of groups[2]) {
     for (const wish of groups[3]) for (const task of groups[4]) {
@@ -115,13 +125,36 @@ test("every final quiz combination keeps its available distinct name options", (
         preferences: { tastes: [], sweetness: "balanced", restrictions: ["none"] },
         seed: "all-name-combinations",
       });
-      assert.ok(result.drinkNames.length >= 1 && result.drinkNames.length <= 3, result.drinkNames.join(" | "));
-      assert.equal(new Set(result.drinkNames).size, result.drinkNames.length, result.drinkNames.join(" | "));
+      assert.equal(result.drinkNames.length, 3, result.drinkNames.join(" | "));
+      assert.equal(new Set(result.drinkNames).size, 3, result.drinkNames.join(" | "));
+      assert.ok(result.drinkNames.every((name) => existingDrinkNames.has(name)), result.drinkNames.join(" | "));
+      result.drinkNames.forEach((name) => seenNames.add(name));
+      assert.deepEqual(result.drinkNames, computeResult({
+        answers: [state, taste, deleted, wish, task],
+        preferences: { tastes: [], sweetness: "balanced", restrictions: ["none"] },
+        seed: "all-name-combinations",
+      }).drinkNames);
       checked += 1;
     }
   }
 
   assert.equal(checked, 4500);
+  assert.deepEqual(seenNames, existingDrinkNames);
+});
+
+test("changing one answer can change the matched candidates", () => {
+  const base = {
+    preferences: { tastes: [], sweetness: "balanced", restrictions: [] },
+    seed: "one-answer-difference",
+  };
+  const original = computeResult({ ...base, answers: socialAnswers }).drinkNames;
+  const variants = socialAnswers.map((_, index) => {
+    const answers = [...socialAnswers];
+    answers[index] = ["state-offline", "taste-quiet", "delete-boss", "ai-work", "task-ai"][index];
+    return computeResult({ ...base, answers }).drinkNames;
+  });
+
+  assert.ok(variants.every((names) => names.some((name) => !original.includes(name))));
 });
 
 test("builds receipt decoration without replacing the existing percentage metrics", () => {

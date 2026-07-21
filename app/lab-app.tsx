@@ -121,7 +121,7 @@ export default function LabApp() {
 
   const result = useMemo(() => computeResult({ answers, preferences, seed, alcoholFree: participation === "nonalcoholic" }), [answers, preferences, seed, participation]);
   const displayName = useMemo(() => alternateDrinkName(result, nameOffset), [result, nameOffset]);
-  const nameCount = Math.max(1, result.drinkNames?.length ?? 1);
+  const nameCount = result.recipe ? 3 : 1;
   const glassTheme = result.recipe?.glass ?? { color: "#829c96", sparkling: false };
   const glassStyle = {
     "--liquid-color": glassTheme.color,
