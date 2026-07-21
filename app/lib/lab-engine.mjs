@@ -128,10 +128,10 @@ const WISH_TASK_NAMES = {
     "task-ai": "Agent 负责开局",
   },
   love: {
-    "task-start": "桃花没有，酒花很多",
-    "task-research": "心动暂无返回值",
-    "task-delay": "恋爱进程暂停，酒意继续",
-    "task-ai": "感情不支持批处理",
+    "task-start": "先把快乐启动",
+    "task-research": "兴趣暂无返回值",
+    "task-delay": "计划进程暂停，酒意继续",
+    "task-ai": "情绪不支持批处理",
   },
   "ai-work": {
     "task-start": "AI 建议先开瓶",
