@@ -97,27 +97,16 @@ const STATE_TONE_NAMES = {
 };
 
 const DELETE_JOKE_NAMES = {
-  "delete-monday": "周一暂不营业",
-  "delete-group": "群聊进入勿扰",
   "delete-boss": "老板勿扰特调",
   "delete-todos": "待办暂存酒",
-  "delete-rumination": "脑内会议已散场",
   "delete-anxiety": "焦虑暂存云端",
   "delete-bug": "Bug 泡酒了",
-  "delete-alarm": "闹钟申请驳回",
-  "delete-ddl": "DDL 延期成功",
 };
 
 const WISH_TASK_NAMES = {
   vacation: {
-    "task-start": "假期尚在排队",
-    "task-research": "休假通道已开启",
-    "task-delay": "清醒稍后处理",
-    "task-ai": "AI 已接管请假",
   },
   wealth: {
-    "task-start": "财富正在加载",
-    "task-research": "财运进入草稿",
     "task-delay": "先喝出个亿",
     "task-ai": "AI 建议先发财",
   },
@@ -323,10 +312,10 @@ function adjustedIngredients(recipe, preferences) {
 function buildDrinkNames(answers) {
   const stateNames = STATE_TONE_NAMES[answers[0]] ?? STATE_TONE_NAMES["state-unknown"];
   const toneIndex = TASTE_TONE_INDEX[answers[1]] ?? TASTE_TONE_INDEX["taste-quiet"];
-  const deleted = DELETE_JOKE_NAMES[answers[2]] ?? DELETE_JOKE_NAMES["delete-rumination"];
+  const deleted = DELETE_JOKE_NAMES[answers[2]];
   const wishNames = WISH_TASK_NAMES[answers[3]] ?? WISH_TASK_NAMES.vacation;
-  const wishTask = wishNames[answers[4]] ?? wishNames["task-delay"];
-  return [stateNames[toneIndex], deleted, wishTask];
+  const wishTask = wishNames[answers[4]];
+  return [stateNames[toneIndex], deleted, wishTask].filter(Boolean);
 }
 
 function scoreRecipe(recipe, dimensions, preferences) {

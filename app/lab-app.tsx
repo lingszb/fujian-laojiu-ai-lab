@@ -121,6 +121,7 @@ export default function LabApp() {
 
   const result = useMemo(() => computeResult({ answers, preferences, seed, alcoholFree: participation === "nonalcoholic" }), [answers, preferences, seed, participation]);
   const displayName = useMemo(() => alternateDrinkName(result, nameOffset), [result, nameOffset]);
+  const nameCount = Math.max(1, result.drinkNames?.length ?? 1);
   const glassTheme = result.recipe?.glass ?? { color: "#829c96", sparkling: false };
   const glassStyle = {
     "--liquid-color": glassTheme.color,
@@ -441,7 +442,7 @@ export default function LabApp() {
           <blockquote>“{result.agentNote}”<cite>— 福小酿</cite></blockquote>
           <div className="result-actions">
             <button className="primary-button" onClick={() => setScreen("receipt")}>查看我的 AI 酒方 <span>→</span></button>
-            <button className="text-button" onClick={() => setNameOffset((value) => (value + 1) % 3)}>换一句酒名 <span>{(nameOffset % 3) + 1}/3</span></button>
+            {nameCount > 1 && <button className="text-button" onClick={() => setNameOffset((value) => (value + 1) % nameCount)}>换一句酒名 <span>{(nameOffset % nameCount) + 1}/{nameCount}</span></button>}
           </div>
         </section>
       )}
