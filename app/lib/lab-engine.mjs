@@ -472,7 +472,7 @@ function adjustmentFor(recipe, preferences) {
   return "SOFT";
 }
 
-export function computeResult({ answers, preferences, seed }) {
+export function computeResult({ answers, preferences, seed, alcoholFree = false }) {
   const dimensions = buildDimensions(answers);
   const effectivePreferences = preferencesFromAnswers(answers, preferences);
   const drinkNames = buildDrinkNames(answers);
@@ -507,9 +507,16 @@ export function computeResult({ answers, preferences, seed }) {
     .map((item, priority) => ({ item, priority, score: scoreRecipe(item, dimensions, effectivePreferences) }))
     .sort((a, b) => b.score - a.score || a.priority - b.priority)[0].item;
   const drinkName = drinkNames[stableHash % drinkNames.length];
+  const finalRecipe = alcoholFree
+    ? {
+        ...recipe,
+        name: `${recipe.name} 0.0`,
+        ingredients: recipe.ingredients.map(([ingredient, amount]) => [ingredient.replace(/福建老酒|黄酒/g, "无酒精基酒"), amount]),
+      }
+    : recipe;
   return {
     ...base,
-    recipe: { ...recipe, ingredients: adjustedIngredients(recipe, effectivePreferences) },
+    recipe: { ...finalRecipe, ingredients: adjustedIngredients(finalRecipe, effectivePreferences) },
     adjustmentCode: adjustmentFor(recipe, effectivePreferences),
     drinkName,
     reason: reasonFor(recipe, effectivePreferences),

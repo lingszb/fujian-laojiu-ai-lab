@@ -4,7 +4,7 @@ import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react"
 import { toPng } from "html-to-image";
 import { alternateDrinkName, computeResult, normalizeCreatorName } from "./lib/lab-engine.mjs";
 
-type Participation = "drink" | "personality";
+type Participation = "drink" | "nonalcoholic" | "personality";
 type Screen = "age" | "home" | "creator" | "quiz" | "taste" | "brewing" | "result" | "receipt";
 type Preferences = { tastes: string[]; sweetness: string; restrictions: string[] };
 
@@ -119,7 +119,7 @@ export default function LabApp() {
   const glassWobbleTimer = useRef<number | null>(null);
   const receiptRef = useRef<HTMLElement | null>(null);
 
-  const result = useMemo(() => computeResult({ answers, preferences, seed }), [answers, preferences, seed]);
+  const result = useMemo(() => computeResult({ answers, preferences, seed, alcoholFree: participation === "nonalcoholic" }), [answers, preferences, seed, participation]);
   const displayName = useMemo(() => alternateDrinkName(result, nameOffset), [result, nameOffset]);
   const glassTheme = result.recipe?.glass ?? { color: "#829c96", sparkling: false };
   const glassStyle = {
@@ -136,7 +136,7 @@ export default function LabApp() {
     if (saved) {
       if (Array.isArray(saved.answers)) setAnswers(saved.answers as string[]);
       if (saved.preferences) setPreferences(saved.preferences as Preferences);
-      if (saved.participation === "drink" || saved.participation === "personality") setParticipation(saved.participation);
+      if (saved.participation === "drink" || saved.participation === "nonalcoholic" || saved.participation === "personality") setParticipation(saved.participation);
       if (typeof saved.seed === "string") setSeed(saved.seed);
       if (typeof saved.creatorName === "string") {
         const restoredName = normalizeCreatorName(saved.creatorName);
@@ -297,7 +297,7 @@ export default function LabApp() {
             <p className="lead-copy">本体验包含酒精饮品。请根据活动所在地法律与现场要求选择。</p>
             <div className="stack-actions">
               <button className="primary-button" onClick={() => { setParticipation("drink"); setScreen("creator"); }}>我已年满十八周岁，符合饮酒年龄，继续体验 <span>→</span></button>
-              <button className="secondary-button" onClick={() => { setParticipation("personality"); setScreen("creator"); }}>我只体验人格测试，不领取酒精饮品</button>
+              <button className="secondary-button" onClick={() => { setParticipation("nonalcoholic"); setScreen("creator"); }}>我要喝无酒精</button>
             </div>
           </div>
           <p className="legal-copy">未成年人、孕妇、驾驶人员及不宜饮酒者请勿饮酒。饮酒后请勿驾车。</p>
@@ -427,7 +427,7 @@ export default function LabApp() {
             <span>今日人格</span>
             <strong>{result.personalityTitle}</strong>
           </div>
-          {participation === "drink" && result.recipe ? (
+          {participation !== "personality" && result.recipe ? (
             <div className="recommendation">
               <div><span>推荐酒款</span><strong>{result.recipe.name}</strong></div>
               <p>{result.reason}</p>
@@ -505,7 +505,7 @@ export default function LabApp() {
 
                 <p className="receipt-verdict">{result.receiptProfile.verdict}</p>
 
-                {participation === "drink" && result.recipe && (
+                {participation !== "personality" && result.recipe && (
                   <div className="receipt-section formula-section">
                     <div className="formula-title"><span>FORMULA</span><strong>{result.recipe.id} / {result.adjustmentCode}</strong></div>
                     <h3>{result.recipe.name}</h3>
@@ -522,14 +522,14 @@ export default function LabApp() {
                 <div className="receipt-barcode" aria-hidden="true">{result.receiptProfile.barcode}</div>
                 <div className="receipt-number"><span>{result.receiptNumber}</span><strong>FJL / 2026</strong></div>
                 <footer>
-                  {participation === "drink" ? "含酒精 · 请理性饮酒" : "仅展示娱乐人格结果"}<br />PERSONALITY RESULT FOR TODAY ONLY
+                  {participation === "drink" ? "含酒精 · 请理性饮酒" : participation === "nonalcoholic" ? "无酒精 · 请适量饮用" : "仅展示娱乐人格结果"}<br />PERSONALITY RESULT FOR TODAY ONLY
                   <strong className="receipt-producer">WOPC × 福建老酒出品</strong>
                 </footer>
               </div>
             </article>
           </div>
           <div className="receipt-actions">
-            {participation === "drink" && result.recipe && <button className="primary-button" onClick={() => setStaffMode((value) => !value)}>{staffMode ? "退出出杯模式" : "给工作人员看"} <span>{staffMode ? "×" : "↗"}</span></button>}
+            {participation !== "personality" && result.recipe && <button className="primary-button" onClick={() => setStaffMode((value) => !value)}>{staffMode ? "退出出杯模式" : "给工作人员看"} <span>{staffMode ? "×" : "↗"}</span></button>}
             <div className="share-row"><button disabled={downloadingReceipt} onClick={downloadReceipt}>{downloadingReceipt ? "正在生成图片…" : "下载酒方图片"}</button><button onClick={() => shareResult(false)}>分享这一杯</button><button onClick={() => shareResult(true)}>复制文案</button></div>
             <button className="text-button restart-button" onClick={restart}>再测一次</button>
           </div>

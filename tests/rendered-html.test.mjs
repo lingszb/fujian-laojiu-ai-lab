@@ -37,7 +37,7 @@ test("keeps the product flow local, compliant, and free of a flavor catalog", as
   ]);
 
   assert.match(app, /我已年满十八周岁，符合饮酒年龄，继续体验/);
-  assert.match(app, /我只体验人格测试/);
+  assert.match(app, /我要喝无酒精/);
   assert.doesNotMatch(app, /不喝气泡饮品/);
   assert.match(app, /useState<Screen>\("home"\)/);
   assert.match(app, /home-cta" onClick=\{\(\) => setScreen\("age"\)\}/);
