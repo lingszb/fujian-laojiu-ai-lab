@@ -200,7 +200,7 @@ const RECIPES = [
   },
   {
     id: "R04",
-    name: "葡萄星球 Grape Planet",
+    name: "葡萄星球",
     note: "果香、气泡与明亮节奏",
     personalities: { social: 1, energy: 0.85, action: 0.65, celebration: 0.5 },
     tastes: { fruit: 0.8, sparkling: 1, sweet: 0.62, refreshing: 0.8 },
@@ -218,7 +218,7 @@ const RECIPES = [
   },
   {
     id: "R05",
-    name: "碳酸超载 Hyper Soda",
+    name: "碳酸超载",
     note: "橙香、乳酸与轻盈酸甜",
     personalities: { comfort: 1, playful: 0.7, ai: 0.35 },
     tastes: { fruit: 0.65, lactic: 1, sweet: 0.62, refreshing: 0.42 },
@@ -237,7 +237,7 @@ const RECIPES = [
   },
   {
     id: "R06",
-    name: "快乐算法 LOL",
+    name: "快乐算法",
     note: "养乐多、橙汁与黄酒的快乐摇匀",
     personalities: { playful: 1, comfort: 0.75, social: 0.35 },
     tastes: { fruit: 0.85, lactic: 1, sweet: 0.72, refreshing: 0.5 },
@@ -514,11 +514,20 @@ export function computeResult({ answers, preferences, seed, alcoholFree = false 
           R01: "绝对日落 0.0",
           R02: "冰茶清醒版",
           R03: "一蓑烟雨 0.0",
-          R04: "葡萄星球 Grape Planet 0.0",
-          R05: "碳酸超载 Hyper Soda 0.0",
-          R06: "快乐算法 LOL 0.0",
+          R04: "葡萄星球 0.0",
+          R05: "碳酸超载 0.0",
+          R06: "快乐算法 0.0",
         }[recipe.id],
-        ingredients: recipe.ingredients.map(([ingredient, amount]) => [ingredient.replace(/福建老酒|黄酒/g, "无酒精基酒"), amount]),
+        ingredients: (() => {
+          const liquids = recipe.ingredients
+            .filter(([ingredient, amount]) => ingredient !== "冰块" && amount.endsWith("%"))
+            .map(([ingredient, amount]) => [ingredient, Number.parseInt(amount, 10)]);
+          const alcohol = liquids.filter(([ingredient]) => /福建老酒|黄酒/.test(ingredient)).reduce((sum, [, amount]) => sum + amount, 0);
+          const nonAlcohol = liquids.filter(([ingredient]) => !/福建老酒|黄酒/.test(ingredient));
+          const target = nonAlcohol.reduce((best, item, index) => item[1] > best.value ? { index, value: item[1] } : best, { index: 0, value: -1 }).index;
+          if (nonAlcohol.length > 0) nonAlcohol[target][1] += alcohol;
+          return [...nonAlcohol.map(([ingredient, amount]) => [ingredient, `${amount}%`]), recipe.ingredients.find(([ingredient]) => ingredient === "冰块") ?? ["冰块", "适量"]];
+        })(),
       }
     : recipe;
   return {
