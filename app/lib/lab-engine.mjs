@@ -510,7 +510,14 @@ export function computeResult({ answers, preferences, seed, alcoholFree = false 
   const finalRecipe = alcoholFree
     ? {
         ...recipe,
-        name: `${recipe.name} 0.0`,
+        name: {
+          R01: "绝对日落 0.0",
+          R02: "冰茶清醒版",
+          R03: "一蓑烟雨 0.0",
+          R04: "葡萄星球 Grape Planet 0.0",
+          R05: "碳酸超载 Hyper Soda 0.0",
+          R06: "快乐算法 LOL 0.0",
+        }[recipe.id],
         ingredients: recipe.ingredients.map(([ingredient, amount]) => [ingredient.replace(/福建老酒|黄酒/g, "无酒精基酒"), amount]),
       }
     : recipe;
