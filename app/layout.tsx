@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -16,12 +15,7 @@ export default function RootLayout({
     <html lang="zh-CN">
       <body>
         {children}
-        <Script
-          defer
-          data-domain="wine.lingszb.cn"
-          src="https://plausible.io/js/script.js"
-          strategy="afterInteractive"
-        />
+        <script defer data-domain="wine.lingszb.cn" src="https://plausible.io/js/script.js" />
       </body>
     </html>
   );
