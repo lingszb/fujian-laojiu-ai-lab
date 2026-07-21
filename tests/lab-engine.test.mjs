@@ -89,7 +89,7 @@ test("turns all five answers into abstract joke names instead of literal combina
   });
 
   assert.deepEqual(result.drinkNames, [
-    "本轮拒绝加班",
+    "加班请求已退回",
     "Bug 泡酒了",
     "开局先碰杯",
   ]);
