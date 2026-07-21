@@ -231,7 +231,7 @@ export default function LabApp() {
   }
 
   async function shareResult(copyOnly = false) {
-    const copy = `${creatorName} 的酒方《${displayName}》。福小酿把今天的我，酿成了${result.recipe?.name ?? "一种今天的风味"}。`;
+    const copy = `今日状态：${result.dailyStatus}\n今日酒方：${result.recipe?.name ?? "一种今天的风味"}\nWOPC × 福建老酒 AI 调酒实验室生成`;
     if (!copyOnly && navigator.share) {
       try {
         await navigator.share({ title: "WOPC × 福建老酒 AI 调酒实验室", text: copy, url: window.location.href });
@@ -434,7 +434,7 @@ export default function LabApp() {
             </div>
           ) : (
             <div className="recommendation personality-only">
-              <div><span>如果今天是一种风味</span><strong>{result.recipe?.note ?? "认真对待自己的边界"}</strong></div>
+              <div><span>今日状态</span><strong>{result.dailyStatus}</strong></div>
               <p>{participation === "personality" ? "本次仅展示人格结果，不提供酒精饮品领取引导。" : result.reason}</p>
             </div>
           )}

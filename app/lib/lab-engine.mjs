@@ -351,6 +351,17 @@ function personalityTitle(dimensions) {
   return "认真生活的即兴派";
 }
 
+function dailyStatus(dimensions) {
+  if (dimensions.social >= 75 && dimensions.celebration >= 65) return "话题未定，酒局已开。";
+  if (dimensions.ai >= 70 && dimensions.comfort >= 60) return "算力在线，行动稍后。";
+  if (dimensions.energy <= 35 && dimensions.comfort >= 70) return "电量告急，快乐续航。";
+  if (dimensions.reflection >= 75 && dimensions.adventure >= 50) return "答案不明，酒方明确。";
+  if (dimensions.action >= 70 && dimensions.energy >= 65) return "开局很快，清醒很慢。";
+  if (dimensions.romance >= 65) return "心事未读，酒意先到。";
+  if (dimensions.comfort >= 70) return "今日宜松弛，忌过度努力。";
+  return "状态已读，酒方生成。";
+}
+
 function metricSet(dimensions) {
   const spirit = clamp(50 + (dimensions.energy - 50) * 0.55 - (dimensions.comfort - 50) * 0.2);
   const social = clamp(50 + (dimensions.social - 50) * 0.65);
@@ -472,6 +483,7 @@ export function computeResult({ answers, preferences, seed }) {
   const receiptNumber = `FJL-2026-${String(100 + (stableHash % 900)).padStart(3, "0")}`;
   const base = {
     personalityTitle: personalityTitle(dimensions),
+    dailyStatus: dailyStatus(dimensions),
     metrics: metricSet(dimensions),
     receiptNumber,
     dimensions,
