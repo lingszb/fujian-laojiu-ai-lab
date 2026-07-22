@@ -119,9 +119,11 @@ export default function LabApp() {
   const [likeCount, setLikeCount] = useState<number | null>(null);
   const [liked, setLiked] = useState(false);
   const [liking, setLiking] = useState(false);
+  const [likeCelebrating, setLikeCelebrating] = useState(false);
   const [mounted, setMounted] = useState(false);
   const brewTimers = useRef<number[]>([]);
   const glassWobbleTimer = useRef<number | null>(null);
+  const likeCelebrationTimer = useRef<number | null>(null);
   const receiptRef = useRef<HTMLElement | null>(null);
 
   const result = useMemo(() => computeResult({ answers, preferences, seed, alcoholFree: participation === "nonalcoholic" }), [answers, preferences, seed, participation]);
@@ -201,6 +203,7 @@ export default function LabApp() {
 
   useEffect(() => () => {
     if (glassWobbleTimer.current !== null) window.clearTimeout(glassWobbleTimer.current);
+    if (likeCelebrationTimer.current !== null) window.clearTimeout(likeCelebrationTimer.current);
   }, []);
 
   function flash(message: string) {
@@ -284,10 +287,14 @@ export default function LabApp() {
       window.localStorage.setItem(LIKE_STORAGE_KEY, "1");
       setLikeCount(data.count);
       setLiked(true);
+      setLikeCelebrating(true);
+      likeCelebrationTimer.current = window.setTimeout(() => {
+        setLikeCelebrating(false);
+        likeCelebrationTimer.current = null;
+      }, 1100);
       trackPlausibleOnce(window, `${seed}:like-fuxiaoniang`, "Like Fuxiaoniang", {
         recipe: result.recipe?.id ?? "none",
       });
-      flash("福小酿收到你的赞啦");
     } catch {
       flash("福小酿暂时没接住这个赞");
     } finally {
@@ -597,15 +604,21 @@ export default function LabApp() {
             {participation !== "personality" && result.recipe && <button className="primary-button" onClick={() => setStaffMode((value) => !value)}>{staffMode ? "退出出杯模式" : "给工作人员看"} <span>{staffMode ? "×" : "↗"}</span></button>}
             <button
               type="button"
-              className={`like-button${liked ? " is-liked" : ""}`}
+              className={`like-button${liked ? " is-liked" : ""}${likeCelebrating ? " is-celebrating" : ""}`}
               onClick={likeFuxiaoniang}
               disabled={liked || liking}
               aria-pressed={liked}
             >
-              <span className="like-icon" aria-hidden="true">{liked ? "♥" : "♡"}</span>
+              <span className="like-icon" aria-hidden="true">👍</span>
               <span>{liking ? "正在送出这个赞…" : liked ? "已为福小酿点赞" : "为福小酿点赞"}</span>
-              {likeCount !== null && <strong className="like-count">{likeCount}</strong>}
+              {likeCount !== null && <strong key={likeCount} className="like-count">{likeCount}</strong>}
+              {likeCelebrating && (
+                <span className="like-burst" aria-hidden="true">
+                  <i>👍</i><i>👍</i><i>👍</i><i>👍</i>
+                </span>
+              )}
             </button>
+            {liked && <p className={`like-thanks${likeCelebrating ? " is-celebrating" : ""}`} role="status">感谢！福小酿收到你的点赞啦。</p>}
             <div className="share-row"><button disabled={downloadingReceipt} onClick={downloadReceipt}>{downloadingReceipt ? "正在生成图片…" : "下载酒方图片"}</button><button onClick={() => shareResult(false)}>分享这一杯</button><button onClick={() => shareResult(true)}>复制文案</button></div>
             <button className="text-button restart-button" onClick={restart}>再测一次</button>
           </div>
