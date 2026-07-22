@@ -511,7 +511,7 @@ export default function LabApp() {
           )}
           <blockquote>“{result.agentNote}”<cite>— 福小酿</cite></blockquote>
           <div className="result-actions">
-            <button className="primary-button" onClick={() => setScreen("receipt")}>查看我的 AI 酒方 <span>→</span></button>
+            <button className="primary-button result-cta" onClick={() => setScreen("receipt")}>查看我的 AI 酒方 <span>→</span></button>
             {nameCount > 1 && <button className="text-button" onClick={() => setNameOffset((value) => (value + 1) % nameCount)}>换一句酒名 <span>{(nameOffset % nameCount) + 1}/{nameCount}</span></button>}
           </div>
         </section>
