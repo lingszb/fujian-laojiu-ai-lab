@@ -1,31 +1,30 @@
+import { Redis } from "@upstash/redis";
+
 export const dynamic = "force-dynamic";
 
-const LIKE_KEY = "fuxiaoniang-likes";
-const CREATE_COUNTERS_SQL = `
-  CREATE TABLE IF NOT EXISTS counters (
-    key TEXT PRIMARY KEY NOT NULL,
-    value INTEGER DEFAULT 0 NOT NULL
-  )
-`;
+const LIKE_KEY = "fujian-laojiu-ai-lab:fuxiaoniang-likes:v1";
+let redis: Redis | null = null;
 
-async function likesDatabase() {
-  const { env } = await import("cloudflare:workers");
-  if (!env.DB) throw new Error("D1 binding DB is unavailable");
-  return env.DB;
+function likesStore() {
+  const url = process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN;
+  if (!url || !token) throw new Error("Upstash Redis is unavailable");
+  return redis ??= new Redis({ url, token });
 }
 
-async function ensureCountersTable() {
-  const db = await likesDatabase();
-  await db.prepare(CREATE_COUNTERS_SQL).run();
-  return db;
+function countValue(value: unknown) {
+  const count = Number(value ?? 0);
+  if (!Number.isSafeInteger(count) || count < 0) {
+    throw new Error("Invalid likes counter");
+  }
+  return count;
 }
 
-async function readCount() {
-  const db = await ensureCountersTable();
-  const row = await db.prepare("SELECT value FROM counters WHERE key = ?")
-    .bind(LIKE_KEY)
-    .first<{ value: number }>();
-  return Number(row?.value ?? 0);
+function countResponse(count: number) {
+  return Response.json(
+    { count },
+    { headers: { "cache-control": "no-store" } },
+  );
 }
 
 function unavailable() {
@@ -37,10 +36,7 @@ function unavailable() {
 
 export async function GET() {
   try {
-    return Response.json(
-      { count: await readCount() },
-      { headers: { "cache-control": "no-store" } },
-    );
+    return countResponse(countValue(await likesStore().get(LIKE_KEY)));
   } catch {
     return unavailable();
   }
@@ -48,18 +44,7 @@ export async function GET() {
 
 export async function POST() {
   try {
-    const db = await ensureCountersTable();
-    await db.prepare(`
-      INSERT INTO counters (key, value) VALUES (?, 1)
-      ON CONFLICT(key) DO UPDATE SET value = value + 1
-    `).bind(LIKE_KEY).run();
-    const row = await db.prepare("SELECT value FROM counters WHERE key = ?")
-      .bind(LIKE_KEY)
-      .first<{ value: number }>();
-    return Response.json(
-      { count: Number(row?.value ?? 1) },
-      { headers: { "cache-control": "no-store" } },
-    );
+    return countResponse(countValue(await likesStore().incr(LIKE_KEY)));
   } catch {
     return unavailable();
   }

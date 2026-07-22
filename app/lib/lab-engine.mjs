@@ -223,8 +223,8 @@ const RECIPES = [
     note: "果香、气泡与明亮节奏",
     personalities: { social: 1, energy: 0.85, action: 0.65, celebration: 0.5 },
     tastes: { fruit: 0.8, sparkling: 1, sweet: 0.62, refreshing: 0.8 },
-    blockedBy: ["sparkling"],
-    allergens: [],
+    blockedBy: ["sparkling", "dairy"],
+    allergens: ["可能含乳制品"],
     ingredients: [
       ["黄酒", "17%"],
       ["葡萄汁", "33%"],
@@ -372,7 +372,7 @@ function buildDrinkNames(answers, dimensions, seed) {
 function scoreRecipe(recipe, dimensions, preferences) {
   let score = 0;
   for (const [key, weight] of Object.entries(recipe.personalities)) {
-    score += dimensions[key] * weight;
+    score += (dimensions[key] - 50) * weight;
   }
   for (const taste of preferences.tastes) {
     score += (recipe.tastes[taste] ?? 0) * 75;
@@ -490,6 +490,7 @@ function reasonFor(recipe, preferences) {
     R03: `你习惯先想清楚，也愿意给灵感一点时间。${tasteText}更贴近今天的安静节奏。`,
     R04: `你选择了主动开局，也偏爱${tasteText}。今天适合让杯子先把话题打开。`,
     R05: `你今天不必用力进入状态，${tasteText}会让这一杯轻松出现。`,
+    R06: `你今天更适合轻松一点，${tasteText}会把快乐摇得更均匀。`,
   };
   return reasons[recipe.id];
 }
@@ -501,6 +502,7 @@ function noteFor(recipe) {
     R03: "答案不一定立刻出现，回味也算进度。",
     R04: "先庆祝愿意开始，结果可以晚一点到。",
     R05: "不用一直在线，偶尔加载也很正常。",
+    R06: "把复杂留给算法，把快乐留在杯里。",
   }[recipe.id];
 }
 

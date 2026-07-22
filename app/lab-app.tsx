@@ -580,7 +580,7 @@ export default function LabApp() {
                   <div className="receipt-section formula-section">
                     <div className="formula-title"><span>FORMULA</span><strong>{result.recipe.id} / {result.adjustmentCode}</strong></div>
                     <h3>{result.recipe.name}</h3>
-                    <dl>{result.recipe.ingredients.map(([ingredient, amount]) => <div key={ingredient}><dt>{ingredient}</dt><dd>{amount}</dd></div>)}</dl>
+                    <dl>{result.recipe.ingredients.map(([ingredient, amount]: [string, string]) => <div key={ingredient}><dt>{ingredient}</dt><dd>{amount}</dd></div>)}</dl>
                     {result.recipe.allergens.length > 0 && <p className="allergen">注意：{result.recipe.allergens.join("、")}</p>}
                   </div>
                 )}

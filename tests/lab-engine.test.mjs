@@ -69,25 +69,29 @@ test("R03 uses the blue sparkling 5:5:3 一蓑烟雨 formula", () => {
   assert.match(result.recipe.glass.color, /^#[0-9a-f]{6}$/i);
 });
 
-test("all five recipes expose one mixed glass palette with recipe-specific bubbles", () => {
+test("all six recipes are reachable without one recipe dominating the answer space", () => {
   const recipes = new Map();
+  const recipeCounts = new Map();
   const states = ["state-new", "state-offline", "state-hustle", "state-survive", "state-unknown"];
   const tastes = ["taste-sour", "taste-sweet", "taste-bubbles", "taste-quiet", "taste-bold"];
   const deletions = ["delete-monday", "delete-group", "delete-boss", "delete-todos", "delete-rumination", "delete-anxiety", "delete-bug", "delete-alarm", "delete-ddl"];
   const wishes = ["vacation", "wealth", "launch", "love", "ai-work"];
   const tasks = ["task-start", "task-research", "task-delay", "task-ai"];
 
-  collectRecipes: for (const state of states) for (const taste of tastes) for (const deleted of deletions) for (const wish of wishes) for (const task of tasks) {
+  for (const state of states) for (const taste of tastes) for (const deleted of deletions) for (const wish of wishes) for (const task of tasks) {
     const result = computeResult({
       answers: [state, taste, deleted, wish, task],
       preferences: { tastes: [], sweetness: "balanced", restrictions: [] },
       seed: "mixed-glass-recipes",
     });
-    if (result.recipe) recipes.set(result.recipe.id, result.recipe);
-    if (recipes.size === 5) break collectRecipes;
+    if (result.recipe) {
+      recipes.set(result.recipe.id, result.recipe);
+      recipeCounts.set(result.recipe.id, (recipeCounts.get(result.recipe.id) ?? 0) + 1);
+    }
   }
 
-  assert.equal(recipes.size, 5);
+  assert.equal(recipes.size, 6);
+  assert.ok(Math.max(...recipeCounts.values()) < 2250);
   for (const recipe of recipes.values()) {
     assert.ok(recipe.glass);
     assert.deepEqual(Object.keys(recipe.glass).sort(), ["color", "sparkling"]);
@@ -208,7 +212,7 @@ test("dietary restrictions are hard filters", () => {
     seed: "dairy-case",
   });
 
-  assert.ok(!["R01", "R05"].includes(dairyFree.recipe?.id));
+  assert.ok(!["R01", "R04", "R05", "R06"].includes(dairyFree.recipe?.id));
 
   const noneAvailable = computeResult({
     answers: socialAnswers,
@@ -223,17 +227,17 @@ test("dietary restrictions are hard filters", () => {
   assert.equal(noneAvailable.recipe, null);
   assert.equal(noneAvailable.adjustmentCode, null);
 
-  const remainingUiRestrictions = computeResult({
+  const combinedUiRestrictions = computeResult({
     answers: socialAnswers,
     preferences: {
       tastes: [],
       sweetness: "balanced",
       restrictions: ["dairy", "citrus"],
     },
-    seed: "remaining-ui-restrictions",
+    seed: "combined-ui-restrictions",
   });
 
-  assert.equal(remainingUiRestrictions.recipe?.id, "R04");
+  assert.equal(combinedUiRestrictions.recipe, null);
 });
 
 test("the same answers and seed produce a stable receipt", () => {
