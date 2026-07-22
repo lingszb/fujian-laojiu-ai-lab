@@ -119,11 +119,10 @@ export default function LabApp() {
   const [likeCount, setLikeCount] = useState<number | null>(null);
   const [liked, setLiked] = useState(false);
   const [liking, setLiking] = useState(false);
-  const [likeCelebrating, setLikeCelebrating] = useState(false);
   const [mounted, setMounted] = useState(false);
   const brewTimers = useRef<number[]>([]);
   const glassWobbleTimer = useRef<number | null>(null);
-  const likeCelebrationTimer = useRef<number | null>(null);
+  const toastTimer = useRef<number | null>(null);
   const receiptRef = useRef<HTMLElement | null>(null);
 
   const result = useMemo(() => computeResult({ answers, preferences, seed, alcoholFree: participation === "nonalcoholic" }), [answers, preferences, seed, participation]);
@@ -203,12 +202,16 @@ export default function LabApp() {
 
   useEffect(() => () => {
     if (glassWobbleTimer.current !== null) window.clearTimeout(glassWobbleTimer.current);
-    if (likeCelebrationTimer.current !== null) window.clearTimeout(likeCelebrationTimer.current);
+    if (toastTimer.current !== null) window.clearTimeout(toastTimer.current);
   }, []);
 
-  function flash(message: string) {
+  function flash(message: string, duration = 2200) {
+    if (toastTimer.current !== null) window.clearTimeout(toastTimer.current);
     setToast(message);
-    window.setTimeout(() => setToast(""), 2200);
+    toastTimer.current = window.setTimeout(() => {
+      setToast("");
+      toastTimer.current = null;
+    }, duration);
   }
 
   function chooseAnswer(id: string) {
@@ -287,14 +290,10 @@ export default function LabApp() {
       window.localStorage.setItem(LIKE_STORAGE_KEY, "1");
       setLikeCount(data.count);
       setLiked(true);
-      setLikeCelebrating(true);
-      likeCelebrationTimer.current = window.setTimeout(() => {
-        setLikeCelebrating(false);
-        likeCelebrationTimer.current = null;
-      }, 1100);
       trackPlausibleOnce(window, `${seed}:like-fuxiaoniang`, "Like Fuxiaoniang", {
         recipe: result.recipe?.id ?? "none",
       });
+      flash("感谢！福小酿收到你的点赞啦。", 5000);
     } catch {
       flash("福小酿暂时没接住这个赞");
     } finally {
@@ -604,21 +603,17 @@ export default function LabApp() {
             {participation !== "personality" && result.recipe && <button className="primary-button" onClick={() => setStaffMode((value) => !value)}>{staffMode ? "退出出杯模式" : "给工作人员看"} <span>{staffMode ? "×" : "↗"}</span></button>}
             <button
               type="button"
-              className={`like-button${liked ? " is-liked" : ""}${likeCelebrating ? " is-celebrating" : ""}`}
+              className={`like-button${liked ? " is-liked" : ""}`}
               onClick={likeFuxiaoniang}
               disabled={liked || liking}
               aria-pressed={liked}
+              aria-label={`${liked ? "已点赞" : "为福小酿点赞"}，总点赞数 ${likeCount ?? "加载中"}`}
             >
-              <span className="like-icon" aria-hidden="true">👍</span>
-              <span>{liking ? "正在送出这个赞…" : liked ? "已为福小酿点赞" : "为福小酿点赞"}</span>
-              {likeCount !== null && <strong key={likeCount} className="like-count">{likeCount}</strong>}
-              {likeCelebrating && (
-                <span className="like-burst" aria-hidden="true">
-                  <i>👍</i><i>👍</i><i>👍</i><i>👍</i>
-                </span>
-              )}
+              <svg className="like-icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M2 20h4V9H2v11zm20-10c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L13.17 1 6.59 7.59C6.22 7.95 6 8.45 6 9v9c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-1z" />
+              </svg>
+              <strong className="like-count">{likeCount ?? "—"}</strong>
             </button>
-            {liked && <p className={`like-thanks${likeCelebrating ? " is-celebrating" : ""}`} role="status">感谢！福小酿收到你的点赞啦。</p>}
             <div className="share-row"><button disabled={downloadingReceipt} onClick={downloadReceipt}>{downloadingReceipt ? "正在生成图片…" : "下载酒方图片"}</button><button onClick={() => shareResult(false)}>分享这一杯</button><button onClick={() => shareResult(true)}>复制文案</button></div>
             <button className="text-button restart-button" onClick={restart}>再测一次</button>
           </div>

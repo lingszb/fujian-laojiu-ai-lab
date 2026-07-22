@@ -1482,21 +1482,21 @@ button:focus-visible {
 }
 
 .like-button {
-  position: relative;
   display: grid;
-  grid-template-columns: 28px 1fr auto;
+  width: fit-content;
+  min-width: 88px;
+  min-height: 48px;
+  grid-template-columns: 28px auto;
   align-items: center;
-  min-height: 58px;
-  padding: 9px 14px;
+  justify-self: center;
+  gap: 10px;
+  padding: 8px 16px;
   border: 1px solid var(--line);
-  border-radius: 5px;
+  border-radius: 999px;
   background: rgba(255, 255, 255, 0.22);
   color: var(--ink);
   font: inherit;
-  font-size: 13px;
   font-weight: 700;
-  text-align: left;
-  overflow: visible;
   cursor: pointer;
   transition: border-color 160ms ease, color 160ms ease, background 160ms ease, transform 160ms ease;
 }
@@ -1527,91 +1527,30 @@ button:focus-visible {
   opacity: 0.65;
 }
 
-.like-icon {
-  color: var(--red);
-  font-family: "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
-  font-size: 25px;
-  line-height: 1;
-  text-align: center;
-  transform-origin: center;
+.like-icon-svg {
+  width: 26px;
+  height: 26px;
+  fill: transparent;
+  stroke: currentColor;
+  stroke-linejoin: round;
+  stroke-width: 1.25;
+  transition: fill 160ms ease, transform 160ms ease;
 }
 
-.like-button.is-celebrating .like-icon {
-  animation: like-pop 560ms cubic-bezier(0.2, 0.9, 0.25, 1.25) both;
+.like-button:hover:not(:disabled) .like-icon-svg {
+  transform: scale(1.06);
+}
+
+.like-button.is-liked .like-icon-svg {
+  fill: currentColor;
 }
 
 .like-count {
   min-width: 28px;
   color: currentColor;
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 13px;
   text-align: right;
-}
-
-.like-button.is-celebrating .like-count {
-  animation: like-count-tick 320ms ease-out both;
-}
-
-.like-burst {
-  position: absolute;
-  top: 5px;
-  left: 27px;
-  width: 1px;
-  height: 1px;
-  pointer-events: none;
-}
-
-.like-burst i {
-  --burst-x: 0px;
-  --burst-r: 0deg;
-  position: absolute;
-  top: 0;
-  left: 0;
-  font-family: "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
-  font-size: 14px;
-  font-style: normal;
-  opacity: 0;
-  animation: like-float 760ms ease-out both;
-}
-
-.like-burst i:nth-child(1) { --burst-x: -22px; --burst-r: -18deg; animation-delay: 0ms; }
-.like-burst i:nth-child(2) { --burst-x: -7px; --burst-r: 10deg; animation-delay: 70ms; }
-.like-burst i:nth-child(3) { --burst-x: 10px; --burst-r: -7deg; animation-delay: 140ms; }
-.like-burst i:nth-child(4) { --burst-x: 25px; --burst-r: 17deg; animation-delay: 210ms; }
-
-.like-thanks {
-  margin: -3px 0 2px;
-  color: var(--red);
-  font-size: 12px;
-  font-weight: 700;
-  text-align: center;
-}
-
-.like-thanks.is-celebrating {
-  animation: like-thanks-in 360ms 180ms ease-out both;
-}
-
-@keyframes like-pop {
-  0% { transform: scale(1); }
-  45% { transform: scale(1.28) rotate(-8deg); }
-  75% { transform: scale(0.94) rotate(3deg); }
-  100% { transform: scale(1); }
-}
-
-@keyframes like-float {
-  0% { opacity: 0; transform: translate3d(0, 4px, 0) scale(0.72); }
-  20% { opacity: 1; }
-  100% { opacity: 0; transform: translate3d(var(--burst-x), -48px, 0) scale(1.05) rotate(var(--burst-r)); }
-}
-
-@keyframes like-count-tick {
-  0% { opacity: 0.45; transform: translateY(5px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes like-thanks-in {
-  0% { opacity: 0; transform: translateY(-5px); }
-  100% { opacity: 1; transform: translateY(0); }
 }
 
 .share-row {
@@ -1746,15 +1685,8 @@ button:focus-visible {
 
   .recipe-glass.is-wobbling,
   .recipe-glass.is-wobbling .mixed-liquid,
-  .like-button.is-celebrating .like-icon,
-  .like-button.is-celebrating .like-count,
-  .like-thanks.is-celebrating,
   .glass-bubbles i {
     animation: none !important;
-  }
-
-  .like-burst {
-    display: none;
   }
 
   *,
